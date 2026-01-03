@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Play11 Matches Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .match { border: 1px solid #ccc; margin: 10px 0; padding: 15px; border-radius: 8px; }
+        .live { border-color: #ff0000; background-color: #ffe6e6; }
+        .upcoming { border-color: #0066cc; background-color: #e6f3ff; }
+        .completed { border-color: #00cc00; background-color: #e6ffe6; }
+        .cancelled { border-color: #666666; background-color: #f0f0f0; }
+        .league { font-weight: bold; color: #333; }
+        .teams { font-size: 18px; margin: 10px 0; }
+        .score { font-size: 24px; font-weight: bold; color: #ff0000; }
+    </style>
+</head>
+<body>
+    <h1>🏆 Play11 Football Matches</h1>
+    <div id="matches"></div>
+    <div id="stats"></div>
+
+    <script>
+        async function loadMatches() {
+            try {
+                const response = await fetch('http://localhost:5000/api/matches');
+                const matches = await response.json();
+                
+                displayMatches(matches);
+                showStats(matches);
+            } catch (error) {
+                document.getElementById('matches').innerHTML = `<p style="color: red;">Error loading matches: ${error.message}</p>`;
+            }
+        }
+
+        function displayMatches(matches) {
+            const container = document.getElementById('matches');
+            
+            if (matches.length === 0) {
+                container.innerHTML = '<p>No matches found.</p>';
+                return;
+            }
+
+            container.innerHTML = matches.map(match => {
+                const homeTeam = match.teams[0]?.name || 'Home Team';
+                const awayTeam = match.teams[1]?.name || 'Away Team';
+                const statusClass = match.status.toLowerCase();
+                
+                let scoreDisplay = '';
+                if (match.status === 'LIVE' || match.status === 'COMPLETED') {
+                    scoreDisplay = `<div class="score">${match.score?.home || 0} - ${match.score?.away || 0}</div>`;
+                }
+                
+                return `
+                    <div class="match ${statusClass}">
+                        <div class="league">🏆 ${match.league} ${getLeagueIcon(match.league)}</div>
+                        <div class="teams">
+                            ${getTeamIcon(homeTeam)} ${homeTeam} vs ${awayTeam} ${getTeamIcon(awayTeam)}
+                        </div>
+                        ${scoreDisplay}
+                        <div>📅 ${new Date(match.matchStartTime).toLocaleString()}</div>
+                        <div>🏟️ ${match.venue || 'Stadium TBD'}</div>
+                        <div>🌤️ ${match.weather || 'Weather TBD'}</div>
+                        <div>📊 Status: <strong>${match.status}</strong></div>
+                        <div>🎯 Contests: ${match.totalContests || 0} | 💰 Prize Pool: ₹${(match.totalPrizePool || 0).toLocaleString()}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showStats(matches) {
+            const stats = document.getElementById('stats');
+            const statusCounts = matches.reduce((acc, match) => {
+                acc[match.status] = (acc[match.status] || 0) + 1;
+                return acc;
+            }, {});
+
+            const leagueCounts = matches.reduce((acc, match) => {
+                acc[match.league] = (acc[match.league] || 0) + 1;
+                return acc;
+            }, {});
+
+            stats.innerHTML = `
+                <h2>📊 Statistics</h2>
+                <h3>Match Status:</h3>
+                ${Object.entries(statusCounts).map(([status, count]) => `<p>${getStatusIcon(status)} ${status}: ${count}</p>`).join('')}
+                
+                <h3>Leagues:</h3>
+                ${Object.entries(leagueCounts).map(([league, count]) => `<p>${getLeagueIcon(league)} ${league}: ${count}</p>`).join('')}
+            `;
+        }
+
+        function getTeamIcon(teamName) {
+            const icons = {
+                'Manchester United': '🔴',
+                'Liverpool': '❤️',
+                'Chelsea': '🔵',
+                'Arsenal': '🔫',
+                'Manchester City': '💙',
+                'Tottenham': '⚪',
+                'Real Madrid': '👑',
+                'Barcelona': '🔴',
+                'PSG': '💜',
+                'Bayern Munich': '🔴',
+                'AC Milan': '🔴',
+                'Inter Milan': '🔵',
+                'Juventus': '⚫',
+                'Borussia Dortmund': '💛'
+            };
+            return icons[teamName] || '⚽';
+        }
+
+        function getLeagueIcon(league) {
+            const icons = {
+                'Premier League': '👑',
+                'Champions League': '⭐',
+                'La Liga': '🇪🇸',
+                'Serie A': '🇮🇹',
+                'Bundesliga': '🇩🇪',
+                'FA Cup': '🏆',
+                'Europa League': '🏆'
+            };
+            return icons[league] || '🏆';
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                'UPCOMING': '⏰',
+                'LIVE': '🔴',
+                'COMPLETED': '✅',
+                'CANCELLED': '❌'
+            };
+            return icons[status] || '📋';
+        }
+
+        // Load matches when page loads
+        loadMatches();
+    </script>
+</body>
+</html>
