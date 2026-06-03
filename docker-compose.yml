@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: ./Frontend
+    ports:
+      - "80:80"        
+    networks:
+      - public_net
+    depends_on:
+      - backend
+
+  backend:
+    build: ./Backend
+    ports:
+      - "5000:5000"  
+    networks:
+      - public_net
+      - db_net
+    environment:
+      - MONGO_URI=mongodb://database:27017/play11_db
+    depends_on:
+      - database
+
+  # 3. The MongoDB Database
+  database:
+    image: mongo:latest
+    command: ["--wiredTigerCacheSizeGB", "0.25"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - db_net
+
+networks:
+  public_net:
+    driver: bridge
+  db_net:
+    driver: bridge
+
+volumes:
+  mongo_data:
