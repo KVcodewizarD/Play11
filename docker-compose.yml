@@ -11,7 +11,7 @@ services:
       - backend
 
   backend:
-    build: ./Backend
+    image: krishvidh/play11-backend:latest
     ports:
       - "5000:5000"  
     networks:
